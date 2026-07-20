@@ -1495,7 +1495,7 @@ class Game{
       w.goal.freed=true; this.completeLevel();
     }
     /* camera: follow, lock in boss arena / bonus room */
-    if(this.bossActive&&p.y<ARENA_H+80)this.cam.ty=70; // floor (y=560) lands at screen ~490
+    if(this.bossActive&&p.y<ARENA_H+80)this.cam.ty=Math.max(70,p.y-500); // frame the arena, but never let Pip slip off the bottom while he climbs in
     else this.cam.ty=p.cy-VH*.58;
     const inRoom=p.y>w.H;
     this.cam.update(dt, inRoom?w.H+240:0, inRoom?w.roomBottom-VH:w.H-VH);
