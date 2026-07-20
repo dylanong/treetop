@@ -7,7 +7,7 @@ Glimmer Spirits caged by **Ratchet**, a mischievous raccoon inventor. Dodge roll
 coconuts, falling beehives and patrolling owls, sling acorns from your trusty slingshot,
 and take down four unique bosses on your way to the canopy.
 
-### ▶️ [Play it here](https://dylanong.github.io/treetop-rescue/)
+### ▶️ [Play it here](https://dylanong.github.io/treetop/)
 
 *Works in any modern desktop or mobile browser. No installs, no downloads.*
 
