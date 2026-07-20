@@ -6,7 +6,8 @@
 <title>Treetop Rescue — Pip &amp; the Glimmer Spirits</title>
 <style>
   :root{ --bark:#4a3020; --night:#16261c; }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   html,body{ margin:0; height:100%; background:var(--night); overflow:hidden;
     font-family:"Trebuchet MS", Verdana, sans-serif; }
   #stage{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
@@ -24,11 +25,21 @@
     touch-action:none;
   }
   #touch button:active,#touch button.held{ background:rgba(140,170,110,.65); }
-  .t-left{ left:18px; bottom:24px; } .t-right{ left:96px; bottom:24px; }
-  .t-up{ left:57px; bottom:96px; } .t-down{ left:57px; bottom:-42px; display:none; }
-  .t-jump{ right:20px; bottom:30px; width:78px; height:78px; background:rgba(178,108,80,.55); }
-  .t-sprint{ right:110px; bottom:24px; }
-  .t-fire{ right:34px; bottom:118px; background:rgba(200,150,60,.55); }
+  /* safe-area aware: clears notches, curved corners and the home indicator */
+  #touch{ --sab:env(safe-area-inset-bottom,0px);
+          --sal:env(safe-area-inset-left,0px);
+          --sar:env(safe-area-inset-right,0px); }
+  /* left thumb: diamond D-pad (down included — needed to climb down ladders) */
+  .t-left { left:calc(10px + var(--sal));  bottom:calc(58px + var(--sab)); }
+  .t-right{ left:calc(142px + var(--sal)); bottom:calc(58px + var(--sab)); }
+  .t-up   { left:calc(76px + var(--sal));  bottom:calc(112px + var(--sab)); }
+  .t-down { left:calc(76px + var(--sal));  bottom:calc(8px + var(--sab)); }
+  /* right thumb: jump big and closest, fire above, sprint inward */
+  .t-jump { right:calc(16px + var(--sar)); bottom:calc(34px + var(--sab));
+            width:78px; height:78px; background:rgba(178,108,80,.55); }
+  .t-sprint{ right:calc(108px + var(--sar)); bottom:calc(20px + var(--sab)); }
+  .t-fire { right:calc(30px + var(--sar)); bottom:calc(124px + var(--sab));
+            background:rgba(200,150,60,.55); }
   button:focus-visible{ outline:3px solid #e3b258; outline-offset:2px; }
 </style>
 </head>
@@ -1825,6 +1836,11 @@ function frame(t){
 requestAnimationFrame(frame);
 addEventListener("keydown",()=>G.audio.boot(),{once:true});
 /* debug/testing hook */
+/* mobile: stop long-presses from triggering selection/callout menus */
+document.addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("selectstart",e=>e.preventDefault());
+document.addEventListener("touchstart",e=>{ if(e.target.closest&&e.target.closest("#touch"))e.preventDefault(); },{passive:false});
+
 window.__TREETOP={G,buildLevel,Player,BossOwl,BossBeaver,BossGolem,BossRaccoon};
 </script>
 </body>
