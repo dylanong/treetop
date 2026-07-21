@@ -37,7 +37,6 @@
   /* right thumb: jump big and closest, fire above, sprint inward */
   .t-jump { right:calc(16px + var(--sar)); bottom:calc(34px + var(--sab));
             width:78px; height:78px; background:rgba(178,108,80,.55); }
-  .t-sprint{ right:calc(108px + var(--sar)); bottom:calc(20px + var(--sab)); }
   .t-fire { right:calc(30px + var(--sar)); bottom:calc(124px + var(--sab));
             background:rgba(200,150,60,.55); }
   button:focus-visible{ outline:3px solid #e3b258; outline-offset:2px; }
@@ -50,7 +49,6 @@
   <button class="t-right" data-k="right" aria-label="Move right">▶</button>
   <button class="t-up"    data-k="up"    aria-label="Climb up">▲</button>
   <button class="t-down"  data-k="down"  aria-label="Climb down">▼</button>
-  <button class="t-sprint" data-k="sprint" aria-label="Sprint">S</button>
   <button class="t-jump"  data-k="jump"  aria-label="Jump">A</button>
   <button class="t-fire"  data-k="fire"  aria-label="Fire slingshot">◎</button>
 </div>
@@ -67,6 +65,8 @@
 /* ---------------- utilities ---------------- */
 const VW=960, VH=540, TAU=Math.PI*2;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+/* touch devices have no sprint button — Pip builds up to a run on his own */
+const IS_TOUCH=typeof matchMedia==="function"&&matchMedia("(pointer:coarse)").matches;
 const lerp=(a,b,t)=>a+(b-a)*t;
 const aabb=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const dist2=(x1,y1,x2,y2)=>{const dx=x1-x2,dy=y1-y2;return dx*dx+dy*dy;};
@@ -673,6 +673,7 @@ class Player{
     this.x=x; this.y=y; this.vx=0; this.vy=0; this.dir=1;
     this.grounded=false; this.climbing=false; this.coyote=0; this.jbuf=0;
     this.ammo=6; this.fireCd=0; // slingshot: press X/F (or ◎ on touch)
+    this.runT=0; this.runDir=0;  // auto-sprint wind-up (touch only)
     this.usedDouble=false; this.invuln=0; this.anim=0; this.support=null;
     this.spd=0; this.dj=0; this.shield=false; this.leaf=0; this.jumpHeld=false;
   }
@@ -715,11 +716,22 @@ class Player{
     /* --- run physics --- */
     const onIce=this.support&&this.support.type==="ice";
     if(!this.climbing){
-      const sprint=inp.get("sprint")?1.35:1;
+      /* auto-sprint (touch): keep running one way and Pip winds up to a sprint.
+         Changing direction or stopping resets the wind-up. */
+      const heldDir=(inp.get("right")?1:0)-(inp.get("left")?1:0);
+      if(IS_TOUCH){
+        if(heldDir&&heldDir===this.runDir)this.runT+=dt;
+        else{ this.runDir=heldDir; this.runT=0; }
+      }
+      const auto=IS_TOUCH&&this.runT>.45;
+      const sprint=(inp.get("sprint")||auto)?1.35:1;
       const boost=this.spd>0?1.35:1;
       const top=240*sprint*boost;
       const want=(inp.get("right")?1:0)-(inp.get("left")?1:0);
       if(want)this.dir=want;
+      if(auto&&this.grounded&&!this.wasAuto)
+        G.particles.emit(this.cx,this.y+this.h,{n:5,color:"#a3b18a",spd:70,life:.35});
+      this.wasAuto=auto;
       const accel=this.grounded?(onIce?600:2000):1100;
       const fric=this.grounded?(onIce?140:1800):200;
       if(want)this.vx=clamp(this.vx+want*accel*dt,-top,top);
@@ -1700,7 +1712,8 @@ class Game{
       ];
       items.forEach((it,i)=>this.btn(c,VW/2-160,230+i*62,320,48,it.l,it.cb,i===this.menuIdx%items.length));
       this.menuNav(items);
-      shadowText("ARROWS/WASD move · UP climb · SPACE jump · SHIFT sprint · X/F slingshot",VW/2,516,"#ffffffcc",14,"center");
+      shadowText(IS_TOUCH?"◀▶ move · ▲▼ climb · A jump · ◎ slingshot · keep running to sprint"
+        :"ARROWS/WASD move · UP climb · SPACE jump · SHIFT sprint · X/F slingshot",VW/2,516,"#ffffffcc",14,"center");
     }
     else if(this.state==="scores"){
       this.drawTitleBG(c); this.panel(c,VW/2-240,80,480,380,"HIGH SCORES");
